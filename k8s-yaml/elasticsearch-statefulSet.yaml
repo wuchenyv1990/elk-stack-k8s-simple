@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elk 
+  labels:
+    elk-app: es
+spec:
+  serviceName: es
+  selector:
+    matchLabels:
+      elk-app: es
+  template:
+    metadata:
+      labels:
+        elk-app: es
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1
+            memory: 1Gi
+          requests:
+            cpu: 0.5 
+            memory: 500Mi
+        env:
+          - name: "discovery.type"
+            value: "single-node"
+          - name: ES_JAVA_OPTS
+            value: "-Xms512m -Xmx1g" 
+        ports:
+        - containerPort: 9200
+          name: es
+          protocol: TCP
+        - containerPort: 9300
+          name: esnode
+          protocol: TCP
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+        - name: elasticsearch-plugins
+          mountPath: /usr/share/elasticsearch/plugins
+      volumes:
+      - name: elasticsearch-data
+        hostPath:
+          path: ${DATA_DIR}/elasticsearch/data
+          type: DirectoryOrCreate
+      - name: elasticsearch-plugins
+        hostPath:
+          path: ${DATA_DIR}/elasticsearch/plugins
+          type: DirectoryOrCreate      

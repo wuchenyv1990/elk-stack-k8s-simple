@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: elk 
+  labels:
+    elk-app: kibana
+spec:
+  selector:
+    matchLabels:
+      elk-app: kibana
+  template:
+    metadata:
+      labels:
+        elk-app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:7.8.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1
+            memory: 500Mi
+          requests:
+            cpu: 0.5 
+            memory: 200Mi
+        env:
+          - name: ELASTICSEARCH_HOSTS
+            # value: http://elasticsearch.elk.svc.cluster.local:9200 #(alternative: coreDNS)
+            value: http://elasticsearch:9200
+        ports:
+        - containerPort: 5601
+          name: kibana
+          protocol: TCP
