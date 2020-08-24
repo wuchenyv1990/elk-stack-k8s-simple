@@ -47,6 +47,9 @@ function deploy() {
     echo 'Create namespace "elk" on k8s'
     kubectl apply -f ${K8S_DIR}/elastic-stack-namespace.yaml
 
+    echo "Create nginx-filebeat-configmap"
+    kubectl apply -f ${K8S_DIR}/nginx-filebeat-settings-configmap.yaml
+
     # elasticsearch
     echo "Create elasticsearch-statefulSet"
     kubectl create -f ${K8S_DIR}/elasticsearch-statefulSet.yaml
@@ -60,8 +63,6 @@ function deploy() {
     kubectl create -f ${K8S_DIR}/kibana-service.yaml
 
     # nginx
-    echo "Create nginx-filebeat-configmap"
-    kubectl apply -f ${K8S_DIR}/nginx-filebeat-settings-configmap.yaml
     echo "Create nginx deployment and service"
     kubectl create -f ${K8S_DIR}/nginx-deployment.yaml -f ${K8S_DIR}/nginx-service.yaml
 }
