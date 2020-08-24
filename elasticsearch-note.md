@@ -24,8 +24,8 @@ PUT operation_log
 {
   "settings" : {
     "index" : {
-      "number_of_shards": 1,
-      "number_of_replicas": 1
+      "number_of_shards" : 1,
+      "number_of_replicas" : 1
     }
   },
   "mappings" : {
@@ -39,7 +39,7 @@ PUT operation_log
           }
         }
       },
-      "desc": {
+      "desc" : {
         "type" : "text",
         "analyzer" : "ik_max_word",
         "search_analyzer" : "ik_max_word",
@@ -82,27 +82,27 @@ DELETE operation_log(/_doc/id)
 ### **插入文档**
 
 - 指定id，增加版本号
+  ```
+  PUT/POST operation_log/_doc/1
+  {
+    "event" : "create_order",
+    "desc" : "提交订单：123456",
+    "user_name" : "小张",
+    "user_id" : "1",
+    "log_time" : "2020-08-08 14:00:00"
+  }
+  ```
 - post随机文档id
-
-```
-PUT/POST operation_log/_doc/1
-{
-  "event" : "create_order",
-  "desc" : "提交订单：123456",
-  "user_name" : "小张",
-  "user_id" : "1",
-  "log_time" : "2020-08-08 14:00:00"
-}
-
-POST operation_log/_doc
-{
-  "event" : "create_order",
-  "desc" : "提交订单：123456",
-  "user_name" : "小张",
-  "user_id" : "1",
-  "log_time" : "2020-08-08 14:00:00"
-}
-```
+  ```
+  POST operation_log/_doc
+  {
+    "event" : "create_order",
+    "desc" : "提交订单：123456",
+    "user_name" : "小张",
+    "user_id" : "1",
+    "log_time" : "2020-08-08 14:00:00"
+  }
+  ```
 
 ### **批量插入**
 
@@ -174,6 +174,11 @@ POST _bulk
 ---
 
 ## **`查询`**
+
+两种上下文：
+1. Query context，关注“此文档与该查询子句的匹配程度如何？”，除了确定文档是否匹配之外，查询子句还计算_score元字段中的相关性得分 。
+2. Filter context，关注“此文档是否与此查询子句匹配？"，答案很简单，是或否，不打分。过滤器上下文主要用于过滤结构化数据。
+
 
 ### **source filter**
 
@@ -254,20 +259,20 @@ GET operation_log/_search
 
 ### **`range`**
 
-- gte >=
-- gt >
-- lte <=
-- lt <
-- format 日期格式，默认同mapping
-- relation 对类型为 range 字段的查询
-- time_zone UTC时区
-- boost 设置查询的提升值，默认为 1.0
+- gte : >=
+- gt : >
+- lte : <=
+- lt : <
+- format : 日期格式，默认同mapping
+- relation : 对类型为 range 字段的查询
+- time_zone : UTC时区
+- boost : 设置查询的提升值，默认为 1.0
 
 数字/日期，类型为 NumericRangeQuery
 ```
 GET operation_log/_search
 {
-  "query": {
+  "query" : {
     "range" : {
       "user_id" : {
         "gte" : 1,
@@ -322,8 +327,8 @@ PUT aggregate
 {
   "mappings" : {
     "properties" : {
-      "interval": {
-        "type": "integer_range"
+      "interval" : {
+        "type" : "integer_range"
       }
     }
   }
@@ -348,7 +353,7 @@ POST _bulk
     {
       "query" : {
         "range" : {
-          "interval": {
+          "interval" : {
             "gte" : 12,
             "lte" : 17,
             "relation" : "intersects"
@@ -363,7 +368,7 @@ POST _bulk
     {
       "query" : {
         "range" : {
-          "interval": {
+          "interval" : {
             "gte" : 12,
             "lte" : 17,
             "relation" : "contains"
@@ -378,7 +383,7 @@ POST _bulk
     {
       "query" : {
         "range" : {
-          "interval": {
+          "interval" : {
             "gte" : 12,
             "lte" : 17,
             "relation" : "within"
@@ -404,7 +409,7 @@ GET operation_log/_search
 {
   "query" : {
     "prefix" : { 
-      "desc": "处*"
+      "desc" : "处*"
     }
   }
 }
@@ -418,7 +423,7 @@ GET operation_log/_search
 {
   "query" : {
     "fuzzy" : { 
-      "desc": "处*"
+      "desc" : "处*"
     }
   }
 }
@@ -437,10 +442,10 @@ GET operation_log/_search
   "query" : {
     "fuzzy" : { 
       "desc" : {
-        "value": "订旦",
-        "fuzziness": 1,
-        "prefix_length": 1,
-        "max_expansions": 2
+        "value" : "订旦",
+        "fuzziness" : 1,
+        "prefix_length" : 1,
+        "max_expansions" : 2
       }
     }
   }
@@ -448,6 +453,72 @@ GET operation_log/_search
 ```
 
 #### **`exists`**
+
+查找指定字段包含任何非空值，不包括：
+- 空字符串，如""或"-"
+- 包含null和另一个值的数组，如[null, "foo"]
+- 自定义null-value，在字段映射中定义
+
+可能为not exist的几个场景
+- null or []
+- mapping中设置"index" : false
+- field长度超过mapping中设置的ignore_above
+- mapping中设置了ignore_malformed，字段是格式不正确的
+
+```
+GET operation_log/_search
+{
+  "query" : {
+    "exists" : { 
+      "field" : "desc"
+    }
+  }
+}
+```
+
+查询为null的字段，应该使用：must_not + exists
+```
+GET operation_log/_search
+{
+  "query" : {
+    "bool" : {
+      "must_not" : [
+        {
+          "exists" : {
+            "field": "user"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### **`regexp`**
+
+```
+GET operation_log/_search
+{
+  "query" : {
+    "regexp" : {
+      "desc": "处.*"
+    }
+  }
+}
+```
+
+### **`ids`**
+
+```
+GET operation_log/_search
+{
+  "query" : {
+    "ids" : {
+      "values" : ["1", "4"]
+    }
+  }
+}
+```
 
 ---
 
@@ -488,7 +559,7 @@ GET operation_log/_search
 GET operation_log/_search
 {
   "query" : {
-      "match_phrase": {
+      "match_phrase" : {
       "desc" : {
         "query" :"订单发货",
         "slop" : 1
@@ -649,10 +720,219 @@ GET operation_log/_search
 
 ### **`bool`**
 
-1. must
-2. filter
-3. should
-4. must_not
+4种子句类型：
+1. must 必须出现在匹配的文档中，并将增加得分
+2. filter 必须匹配，子句在过滤器上下文中执行，不像must，`忽略打分，子句用于缓存`。
+3. should 或出现在匹配的文档中，有最小匹配数(minimum_should_match)
+4. must_not 不得出现在匹配的文档中。子句在过滤器上下文中执行，`忽略打分，子句用于缓存`。
+子句只支持 Full text queries、Term-level queries、Bool query 
 
-### ** **
+```
+POST operation_log/_search
+{
+  "query" : {
+    "bool" : {
+      "must" : {
+        "match" : { "desc" : "123456" }
+      },
+      "filter" : {
+        "match" : { "desc" : "订单已经发货" }
+      },
+      "must_not" : {
+        "range" : {
+          "user_id" : { "gte" : 3, "lte" : 2 }
+        }
+      },
+      "should" : [
+        { "term" : { "desc" : "收取" } },
+        { "term" : { "desc" : "包裹" } }
+      ],
+      "minimum_should_match" : 2,
+      "boost" : 1.0
+    }
+  }
+}
+```
+
+minimum_should_match：
+
+(标记：N-应该匹配的子句数，S-子句总数，X-用户给定的参数值)
+
+1. 正数：N = X
+2. 复数：N = S - |X|
+3. 百分数：N = floor(S*X)
+4. 负百分：N = S - floor(|S*X|)
+5. 组合：如3<90%  S <= 3，则全部都是必需；S > 3，需要90％
+6. 多组合：2<-25% 9<-3<br>
+   空格分隔，每个条件规范仅对大于其前一个的数字有效。
+
+**bool.filter**
+1. filter下的查询不影响得分
+    ```
+    POST operation_log/_search
+    {
+      "query": {
+        "bool": {
+          "filter": {
+            "term": { "desc": "发货" }
+          }
+        }
+      }
+    }
+    ```
+2. match_all query查询得分全为1
+    ```
+    POST operation_log/_search
+    {
+      "query": {
+        "bool": {
+          "must": {
+            "match_all": {}
+          },
+          "filter": {
+            "term": { "desc": "订单" }
+          },
+          "boost": 2
+        }
+      }
+    }
+    ```
+3. constant_score同第2点
+
+1. **should 仅影响得分**：bool查询在Query context中并且bool查询具有must或filter子句，那么bool的should查询即使没有匹配到，文档也将与查询匹配。
+    ```
+    POST operation_log/_search
+    {
+      "query" : {
+        "bool" : {
+          "must" : {
+            "bool" : {
+                "must" : [
+                  { "match" : { "desc" : "包裹" } }
+                ],
+                "should": [
+                  { "term" : { "desc" : "找不到" } }
+                ]
+              }
+            }
+          }  
+        }
+      }
+    }
+    ```
+
+2. **should 至少匹配一个**：如果bool 查询是 Filter context或 既没有must也没filter，则文档至少与一个should的查询相匹配。
+    1. bool 查询是 Filter context
+    2. 既没有must也没filter，should 至少匹配一个 
+        ```
+        POST operation_log/_search
+        {
+          "query" : {
+            "bool" : {
+              "filter" : {
+                "bool" : {
+                    "should": [
+                      { "term" : { "desc" : "不存在" } }
+                    ]
+                  }
+                }
+              }  
+            }
+          }
+        }
+        ```
+
+## **`聚合`**
+
+- size：返回top size的文档
+- shard_size：设置协调节点向各个分片请求的词根个数，然后在协调节点进行聚合，最后只返回size个词根给到客户端，shard_size >= size
+- "missing": "缺失时的值，如果文档不包含，默认忽略"
+
+## **`度量 Metrics`**
+
+一组文档的统计分析
+
+1. avg max min sum 
+    ```
+    POST operation_log/_search
+    {
+      "size" : 0,
+      "aggs" : {
+          "avg_log_time" : { 
+            "avg" : {
+              "field" : "log_time" 
+              "missing": "xxx"   
+            }
+          }
+        }
+    }
+    ```
+2. stats 统计 count max min avg sum
+    ```
+    POST operation_log/_search?size=0
+    {
+      "aggs" : {
+        "demo_stats" : {
+          "stats" : {
+            "field" : "user_id"
+          }
+        }
+      }
+    }
+    ```
+3. extended_stats 比stats多4个统计结果： 平方和、方差、标准差、平均值加/减两个标准差的区间
+4. percentiles
+5. percentile_ranks user_id小于2、3占百分比
+    ```
+    POST operation_log/_search?size=0
+    {
+      "aggs": {
+        "user_id_rank": {
+          "percentile_ranks": {
+            "field": "user_id",
+            "values": [
+              2,
+              3
+            ]
+          }
+        }
+      }
+    }
+    ```
+6. weighted_avg 加权平均
+    ```
+    ...
+        "weighted_avg" : {
+          "value": {
+            "field" : "grade"
+          },
+          "weight" : {
+            "field" : "weight"
+          }
+        }
+    ```
+7. value_count field有值的文档数
+    ```
+    POST operation_log/_search?size=0
+    {
+      "aggs" : {
+        "desc_count" : {
+          "value_count" : {
+            "field": "desc.raw"
+          }
+        }
+      }
+    }
+    ```
+8. cardinality  值去重计数
+    ```
+    ...
+      "cardinality" : {
+        "field" : "user_id"
+      }
+    ```
+
+## **`桶 Bucketing`**
+
+符合条件的文档的集合
 

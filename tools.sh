@@ -12,8 +12,9 @@ function find_pod_by_name_ns() {
 
 # 几个镜像
 function pull_images() {
-    docker pull docker.elastic.co/elasticsearch/elasticsearch:7.8.1
-    docker pull docker.elastic.co/kibana/kibana:7.8.1
+    docker pull docker.elastic.co/elasticsearch/elasticsearch:7.9.0
+    docker pull docker.elastic.co/kibana/kibana:7.9.0
+    docker pull docker.elastic.co/beats/filebeat:7.9.0
     docker pull nginx
 }
 
@@ -24,7 +25,7 @@ function download_analyzer() {
     fi
     ik_dir=$1/ik
     mkdir -p ${ik_dir}
-    download_url="https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.8.1/elasticsearch-analysis-ik-7.8.1.zip"
+    download_url="https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.9.0/elasticsearch-analysis-ik-7.9.0.zip"
     echo "start download elasticsearch-analysis-ik in to ${ik_dir}"
     wget -P ${ik_dir} -c ${download_url}
     echo "download success then unzip"

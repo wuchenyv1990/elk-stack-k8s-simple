@@ -4,3 +4,10 @@ metadata:
    name: elk 
    labels:
      name: elk
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+   name: app
+   labels:
+     name: app

@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: app
+  name: nginx-filebeat-config
+  labels:
+    app: nginx-filebeat
+data:
+  filebeat.yml: |-
+    # ------------------
+    #     非module方式
+    # ------------------
+    # filebeat.inputs:
+    # - type: log
+    #   enabled: true
+    #   paths:
+    #     - /var/log/nginx/access.log
+    #   fields:
+    #       app: nginx # _source增加fields
+    #
+    # tags: ["nginx"]
+    #
+    # setup:
+    #   dashboards
+    #     enabled: true
+    #     index: "nginx-access-%{+yyyy.MM.dd}"
+    #   kibana.host: 'kibana.elk:5601'
+    #   ilm.enabled: false
+    #   template:
+    #     enabled: true
+    #     name: "nginx-access"
+    #     pattern: "nginx-access-*"
+    #     settings:
+    #       index.number_of_shards: 3
+    # output:
+    #   elasticsearch:
+    #     hosts: ['elasticsearch.elk:9200']
+    #     index: "nginx-access-%{+yyyy.MM.dd}"
+
+
+    # ------------------
+    #      module方式
+    # ------------------
+    filebeat.inputs:
+
+    setup:
+      dashboards.enabled: true
+      kibana:
+        host: "kibana.elk:5601"
+
+    filebeat.config:
+      modules:
+        enabled: true
+        path: modules.d/*.yml
+        reload.enabled: true
+
+    filebeat.modules:
+      - module: nginx
+        access:
+          enabled: true
+          var.paths: ["/var/log/nginx/access.log*"]
+        error:
+          enabled: true
+          var.paths: ["/var/log/nginx/error.log*"]
+ 
+    setup.template.settings.index.number_of_shards: 3
+
+    output:
+      elasticsearch:
+        hosts: ['elasticsearch.elk:9200']

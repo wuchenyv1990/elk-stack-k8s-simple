@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: app
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      # nginx
+      - name: nginx
+        image: docker.io/library/nginx:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1
+            memory: 256Mi
+          requests:
+            cpu: 0.5 
+            memory: 128Mi
+        ports:
+        - containerPort: 80
+          name: web-nginx
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 20
+          timeoutSeconds: 20
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 20
+          timeoutSeconds: 20
+          periodSeconds: 60
+        volumeMounts:
+        - name: nginx-logs 
+          mountPath: /var/log/nginx
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d
+        - name: nginx-share
+          mountPath: /var/share/nginx/share
+      # filebeat
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:7.9.0
+        args: [
+          "-c", "filebeat.yml",
+          "-e",
+        ]
+        resources:
+          limits:
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: filebeat-config
+          mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+        - name: nginx-logs 
+          mountPath: /var/log/nginx
+      volumes:
+        - name: nginx-logs
+          emptyDir: {}
+        - name: filebeat-config
+          configMap:
+            name: nginx-filebeat-config
+        - name: nginx-conf
+          hostPath:
+            path: ${DATA_DIR}/nginx/conf.d
+            type: DirectoryOrCreate
+        - name: nginx-share
+          hostPath:
+            path: ${DATA_DIR}/nginx/share
+            type: DirectoryOrCreate
